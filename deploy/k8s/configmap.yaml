@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-content-config
+  namespace: ai-content
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  RUN_WORKER_IN_API: "false"
+  AI_PROVIDER: openai
+  AI_MODEL: gpt-6.1-luna
+  AI_BASE_URL: https://api.openai.com/v1
+  AI_TIMEOUT_SECONDS: "180"
+  AI_MAX_OUTPUT_TOKENS: "8192"
+  AI_MAX_TOOL_CALLS: "40"
+  AI_MAX_RETRIES: "3"
+  AI_TRANSCRIPTION_PROVIDER: local
+  STORAGE_PROVIDER: local
+  STORAGE_PATH: /data/storage
+  ENGINE_BASE_URL: http://ai-content-video.ai-content.svc:32147
+  ENGINE_DATA_ROOT: /data/engine
+  SEED_DEMO_USER: "false"
+  PUBLIC_API_URL: https://studio.example.com
+  WEB_ORIGIN: https://studio.example.com

@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: video-bridge-private
+  namespace: ai-content
+spec:
+  podSelector:
+    matchLabels: { app: ai-content-video }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: ai-content-agent-worker }
+      ports:
+        - { protocol: TCP, port: 32147 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: edge-from-ingress
+  namespace: ai-content
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [ai-content-web, ai-content-api] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: ingress-nginx }
+      ports:
+        - { protocol: TCP, port: 3000 }
+        - { protocol: TCP, port: 8080 }

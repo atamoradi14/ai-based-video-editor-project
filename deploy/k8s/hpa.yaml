@@ -1,0 +1,25 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-content-web
+  namespace: ai-content
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: ai-content-web }
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-content-api
+  namespace: ai-content
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: ai-content-api }
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }

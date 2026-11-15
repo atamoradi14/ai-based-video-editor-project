@@ -1,0 +1,11 @@
+**/.git
+**/.next
+**/bin
+**/obj
+**/node_modules
+**/data
+**/*.db
+**/.env
+**/.env.local
+**/TestResults
+video-engine/ai-edit-studio/.git

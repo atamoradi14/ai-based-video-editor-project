@@ -1,0 +1,75 @@
+{
+  "name": "ai-edit-studio",
+  "version": "0.12.0",
+  "mcpName": "io.github.laaielichter/ai-edit-studio",
+  "type": "module",
+  "description": "Local-first video editor for AI agents and creators: 59 MCP tools for auto-edit, shorts, captions, music and QC. Footage never leaves your computer.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laaielichter/ai-edit-studio.git"
+  },
+  "homepage": "https://laaielichter.github.io/Ai-edit-studio/",
+  "bugs": {
+    "url": "https://github.com/laaielichter/ai-edit-studio/issues"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "video-editing",
+    "video-editor",
+    "ffmpeg",
+    "claude-code",
+    "codex",
+    "ai-agents",
+    "shorts",
+    "captions",
+    "local-first"
+  ],
+  "bin": {
+    "ai-edit-studio": "cli.mjs",
+    "ai-edit-studio-mcp": "mcp.mjs",
+    "ai-edit-studio-server": "server.mjs"
+  },
+  "files": [
+    "cli.mjs",
+    "mcp.mjs",
+    "server.mjs",
+    "src/",
+    "public/",
+    "plugin/",
+    "plugins/",
+    "skills/",
+    "agents/",
+    ".claude-plugin/",
+    ".agents/",
+    "examples/openai/",
+    "INSTALL.md",
+    "SUPPORT.md",
+    "AGENTS.md",
+    "AGENT-GUIDE.md",
+    "CHANGELOG.md",
+    "TROUBLESHOOTING.md",
+    "PRIVACY.md",
+    "THIRD-PARTY-NOTICES.md",
+    "docs/INTEGRATIONS.md",
+    "docs/README.nl.md",
+    "docs/README.hi.md",
+    "install.sh",
+    "start.sh",
+    "install.ps1",
+    "Install-AI-Edit-Studio.cmd",
+    "Start-AI-Edit-Studio.cmd",
+    "Start-Game-Trailer-Studio.cmd",
+    "Start-Game-Trailer-Studio.ps1",
+    "Start-Game-Trailer-Studio.vbs"
+  ],
+  "scripts": {
+    "doctor": "node cli.mjs doctor",
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

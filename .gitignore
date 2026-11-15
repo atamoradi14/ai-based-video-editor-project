@@ -1,0 +1,13 @@
+bin/
+obj/
+node_modules/
+.next/
+out/
+data/
+*.db
+*.user
+.env
+.env.local
+video-engine/ai-edit-studio/node_modules/
+**/TestResults/
+.DS_Store

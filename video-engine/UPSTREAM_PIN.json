@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/laaielichter/Ai-edit-studio",
+  "commit": "46e0250f990bdc6fe74d8e1eca10dbf82bf17a59",
+  "subject": "Merge pull request #154 from laaielichter/claude/friendly-rubin-aj23ha",
+  "committedAt": "2026-11-15T15:30:14+01:00",
+  "version": "0.12.0",
+  "license": "MIT",
+  "licenseCopyright": "Copyright (c) 2026 laaielichter",
+  "toolCount": 59,
+  "notes": "Vendored source without .git history. The pin commit is the exact tree that was cloned and copied."
+}

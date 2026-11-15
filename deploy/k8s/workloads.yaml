@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-content-web
+  namespace: ai-content
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ai-content-web }
+  template:
+    metadata:
+      labels: { app: ai-content-web }
+    spec:
+      serviceAccountName: ai-content
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: web
+          image: __REGISTRY__/ai-content-web:__TAG__
+          ports: [{ containerPort: 3000 }]
+          env:
+            - { name: NEXT_PUBLIC_API_URL, value: "https://studio.example.com" }
+          readinessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /, port: 3000 }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: "500m", memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-content-web
+  namespace: ai-content
+spec:
+  selector: { app: ai-content-web }
+  ports: [{ port: 80, targetPort: 3000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-content-api
+  namespace: ai-content
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ai-content-api }
+  template:
+    metadata:
+      labels: { app: ai-content-api }
+    spec:
+      serviceAccountName: ai-content
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+        fsGroup: 1654
+      containers:
+        - name: api
+          image: __REGISTRY__/ai-content-api:__TAG__
+          ports: [{ containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: ai-content-config }
+            - secretRef: { name: ai-content-secrets }
+          readinessProbe:
+            httpGet: { path: /ready, port: 8080 }
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: media, mountPath: /data }
+      volumes:
+        - { name: media, persistentVolumeClaim: { claimName: ai-content-media } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-content-api
+  namespace: ai-content
+spec:
+  selector: { app: ai-content-api }
+  ports: [{ port: 80, targetPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-content-agent-worker
+  namespace: ai-content
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ai-content-agent-worker }
+  template:
+    metadata:
+      labels: { app: ai-content-agent-worker }
+    spec:
+      serviceAccountName: ai-content
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+        fsGroup: 1654
+      containers:
+        - name: worker
+          image: __REGISTRY__/ai-content-agent-worker:__TAG__
+          ports: [{ containerPort: 8081 }]
+          envFrom:
+            - configMapRef: { name: ai-content-config }
+            - secretRef: { name: ai-content-secrets }
+          readinessProbe:
+            httpGet: { path: /, port: 8081 }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "2", memory: 4Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: media, mountPath: /data }
+            - { name: scratch, mountPath: /tmp }
+      volumes:
+        - { name: media, persistentVolumeClaim: { claimName: ai-content-media } }
+        - { name: scratch, emptyDir: { sizeLimit: 8Gi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-content-video
+  namespace: ai-content
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ai-content-video }
+  template:
+    metadata:
+      labels: { app: ai-content-video }
+    spec:
+      serviceAccountName: ai-content
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: video
+          image: __REGISTRY__/ai-content-video-worker:__TAG__
+          ports: [{ containerPort: 32147 }]
+          env:
+            - name: ENGINE_INTERNAL_TOKEN
+              valueFrom: { secretKeyRef: { name: ai-content-secrets, key: ENGINE_INTERNAL_TOKEN } }
+            - { name: BRIDGE_BIND, value: "0.0.0.0" }
+          readinessProbe:
+            httpGet: { path: /health, port: 32147 }
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+            limits: { cpu: "2", memory: 4Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: media, mountPath: /data }
+            - { name: scratch, mountPath: /tmp }
+      volumes:
+        - { name: media, persistentVolumeClaim: { claimName: ai-content-media } }
+        - { name: scratch, emptyDir: { sizeLimit: 20Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-content-video
+  namespace: ai-content
+spec:
+  selector: { app: ai-content-video }
+  ports: [{ name: bridge, port: 32147, targetPort: 32147 }]
