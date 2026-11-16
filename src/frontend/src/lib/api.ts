@@ -1,4 +1,7 @@
-export const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// Empty means same-origin. The published site serves /api/v1 itself.
+// A self-hosted UI sets NEXT_PUBLIC_API_URL to the ASP.NET API.
+const configured = process.env.NEXT_PUBLIC_API_URL;
+export const apiBase = configured ? configured.replace(/\/$/, "") : "";
 
 export function mediaUrl(url: string | null | undefined) {
   if (!url) return "";
