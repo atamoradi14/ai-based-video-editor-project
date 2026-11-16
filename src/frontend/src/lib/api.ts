@@ -1,7 +1,16 @@
 // Empty means same-origin. The published site serves /api/v1 itself.
 // A self-hosted UI sets NEXT_PUBLIC_API_URL to the ASP.NET API.
-const configured = process.env.NEXT_PUBLIC_API_URL;
-export const apiBase = configured ? configured.replace(/\/$/, "") : "";
+const configured = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+
+export function apiBaseFor(hostname: string) {
+  const pageIsLocal = hostname === "localhost" || hostname === "127.0.0.1";
+  const apiIsLocal = configured === "" || configured.includes("localhost") || configured.includes("127.0.0.1");
+  // A public page must not call the visitor's own computer.
+  if (!pageIsLocal && apiIsLocal) return "";
+  return configured;
+}
+
+export const apiBase = typeof window === "undefined" ? configured : apiBaseFor(window.location.hostname);
 
 export function mediaUrl(url: string | null | undefined) {
   if (!url) return "";

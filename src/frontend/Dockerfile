@@ -3,7 +3,7 @@ WORKDIR /src
 COPY src/frontend/package.json src/frontend/package-lock.json ./
 RUN npm ci
 COPY src/frontend ./
-ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+ARG NEXT_PUBLIC_API_URL=
 ENV NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
