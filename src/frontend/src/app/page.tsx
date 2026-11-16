@@ -11,8 +11,8 @@ import type { Auth } from "@/lib/types";
 export default function HomePage() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("demo@lumen.studio");
-  const [password, setPassword] = useState("Demo-Studio-1");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,7 +58,7 @@ export default function HomePage() {
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
           <div>
             <h2 className="font-serif text-3xl">{mode === "login" ? "Sign in" : "Create an account"}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Development seed: demo@lumen.studio / Demo-Studio-1</p>
+            <p className="mt-2 text-sm text-muted-foreground">Sign in with your studio account.</p>
           </div>
           {mode === "register" && (
             <div className="space-y-2">
