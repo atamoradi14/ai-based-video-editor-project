@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/shell";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { statusLabel, type ProjectSummary } from "@/lib/types";
@@ -33,7 +33,7 @@ export default function ProjectsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[#c4552a]">Library</p>
           <h1 className="font-serif text-4xl">Projects</h1>
         </div>
-        <Button render={<Link href="/projects/new" />}>New project</Button>
+        <Link href="/projects/new" className={buttonVariants()}>New project</Link>
       </div>
       <form className="mb-6 flex gap-2" onSubmit={e => { e.preventDefault(); load(); }}>
         <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Search title or subject" />

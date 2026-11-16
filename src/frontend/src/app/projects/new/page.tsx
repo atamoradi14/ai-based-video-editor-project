@@ -77,7 +77,7 @@ export default function NewProjectPage() {
       {error && <p className="mb-4 text-sm text-[#ffb4a2]">{error}</p>}
       {step === 0 && (
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Title"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="رشد فروش این ماه" /></Field>
+          <Field label="Title"><Input name="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="رشد فروش این ماه" /></Field>
           <Field label="Subject"><Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="What the video is about" /></Field>
           <div className="md:col-span-2"><Field label="Goal"><Textarea value={goal} onChange={e => setGoal(e.target.value)} placeholder="The one thing a viewer should understand" /></Field></div>
           <Field label="Audience"><Input value={audience} onChange={e => setAudience(e.target.value)} /></Field>

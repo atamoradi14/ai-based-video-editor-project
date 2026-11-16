@@ -60,7 +60,7 @@ services:
       AI_PROVIDER: fixture
       AI_MODEL: ""
       PUBLIC_API_URL: http://localhost:8080
-      WEB_ORIGIN: http://localhost:3410,http://localhost:3000
+      WEB_ORIGIN: http://localhost:3410,http://127.0.0.1:3410,http://localhost:3000
     ports:
       - "8080:8080"
     volumes:

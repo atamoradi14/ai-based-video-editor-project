@@ -43,7 +43,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
-var origins = (builder.Configuration["WEB_ORIGIN"] ?? "http://localhost:3410,http://localhost:3000").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var origins = (builder.Configuration["WEB_ORIGIN"] ?? "http://localhost:3410,http://127.0.0.1:3410,http://localhost:3000").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 builder.Services.AddOpenApi();
 builder.Services.AddHostedService<RedisEventBridge>();
