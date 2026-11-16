@@ -58,7 +58,7 @@ export default function HomePage() {
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
           <div>
             <h2 className="font-serif text-3xl">{mode === "login" ? "Sign in" : "Create an account"}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Sign in with your studio account.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Create an account. Each person has their own projects.</p>
           </div>
           {mode === "register" && (
             <div className="space-y-2">

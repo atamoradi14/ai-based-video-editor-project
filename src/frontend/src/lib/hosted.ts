@@ -1,17 +1,23 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { sql } from "@/lib/db";
 
-const maxUpload = 32 * 1024 * 1024;
+const maxUpload = 8 * 1024 * 1024;
 
 type UserRow = { id: string; email: string; display_name: string; password_hash: string };
 
 export async function handleStudio(request: Request, path: string[]): Promise<Response> {
   try {
-    await ensureDemoUser();
     const route = path.join("/");
     const url = new URL(request.url);
-    if (request.method === "POST" && route === "auth/register") return await register(await request.json());
-    if (request.method === "POST" && route === "auth/login") return await login(await request.json());
+    const ip = clientAddress(request);
+    if (request.method === "POST" && route === "auth/register") {
+      await limit(`register:${ip}`, 5, 600);
+      return await register(await request.json());
+    }
+    if (request.method === "POST" && route === "auth/login") {
+      await limit(`login:${ip}`, 10, 600);
+      return await login(await request.json());
+    }
     if (request.method === "GET" && route === "system") return Response.json(systemInfo());
     if (request.method === "GET" && path[0] === "media" && path[1]) return await media(path[1], url);
 
@@ -125,19 +131,22 @@ async function createProject(userId: string, body: Record<string, unknown>) {
 }
 
 async function saveAsset(userId: string, projectId: string, request: Request) {
+  await limit(`upload:${userId}`, 6, 600);
   await owned(userId, projectId);
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) throw studio(400, "invalid_asset", "Choose a file to upload.");
-  if (file.size > maxUpload) throw studio(400, "invalid_asset", "Hosted uploads are limited to 32 MB.");
+  if (file.size > maxUpload) throw studio(400, "invalid_asset", "Hosted uploads are limited to 8 MB.");
   const bytes = Buffer.from(await file.arrayBuffer());
+  const detected = classify(bytes);
+  if (!detected) throw studio(400, "invalid_asset", "Upload a video, image, audio file, or plain-text caption. HTML and SVG are not accepted.");
   const id = crypto.randomUUID();
-  const kind = String(form.get("kind") || "SourceVideo");
+  const kind = String(form.get("kind") || "SourceVideo").slice(0, 40);
   await sql(
     "insert into assets (id, project_id, kind, file_name, content_type, size_bytes, bytes) values ($1,$2,$3,$4,$5,$6,$7)",
-    [id, projectId, kind, file.name.slice(0, 180), file.type || "application/octet-stream", bytes.length, bytes],
+    [id, projectId, kind, `${id}.${detected.extension}`, detected.contentType, bytes.length, bytes],
   );
-  return { id, kind, fileName: file.name, sizeBytes: bytes.length };
+  return { id, kind, fileName: file.name, sizeBytes: bytes.length, contentType: detected.contentType };
 }
 
 async function markGenerate(userId: string, projectId: string) {
@@ -263,10 +272,17 @@ async function media(id: string, url: URL) {
   );
   const asset = rows[0];
   if (!asset?.bytes) return fail(404, "not_found", "That file is not stored.");
-  return new Response(Buffer.from(asset.bytes), {
+  const bytes = Buffer.from(asset.bytes);
+  const detected = classify(bytes);
+  if (!detected) return fail(415, "unsupported_media", "This file cannot be downloaded.");
+  return new Response(bytes, {
     headers: {
-      "content-type": asset.content_type || "application/octet-stream",
-      "content-disposition": `inline; filename="${asset.file_name.replace(/"/g, "")}"`,
+      "content-type": detected.contentType,
+      "content-disposition": `attachment; filename="${id}.${detected.extension}"`,
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'none'; sandbox",
+      "x-frame-options": "DENY",
+      "cache-control": "private, max-age=60",
     },
   });
 }
@@ -293,16 +309,37 @@ async function owned(userId: string, projectId: string) {
   if (!rows.length) throw studio(404, "not_found", "That project is not on this account.");
 }
 
-async function ensureDemoUser() {
-  const email = process.env.STUDIO_DEMO_EMAIL?.trim().toLowerCase();
-  const password = process.env.STUDIO_DEMO_PASSWORD;
-  if (!email || !password) return;
-  const existing = await sql("select id from users where email = $1", [email]);
-  if (existing.length) return;
-  await sql(
-    "insert into users (id, email, display_name, password_hash) values ($1, $2, $3, $4)",
-    [crypto.randomUUID(), email, "Demo editor", hashPassword(password)],
+async function limit(bucket: string, max: number, windowSeconds: number) {
+  const rows = await sql<{ hits: number }>(
+    `insert into rate_limits (bucket, hits, window_start) values ($1, 1, now())
+     on conflict (bucket) do update set
+       hits = case when rate_limits.window_start < now() - ($2::int * interval '1 second') then 1 else rate_limits.hits + 1 end,
+       window_start = case when rate_limits.window_start < now() - ($2::int * interval '1 second') then now() else rate_limits.window_start end
+     returning hits`,
+    [bucket, windowSeconds],
   );
+  if (Number(rows[0]?.hits ?? 0) > max) throw studio(429, "rate_limited", "Too many requests. Wait a few minutes and try again.");
+}
+
+function clientAddress(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "";
+  const raw = (forwarded || request.headers.get("x-real-ip") || "unknown").trim().slice(0, 80);
+  return raw.replace(/[^0-9a-fA-F:.]/g, "") || "unknown";
+}
+
+function classify(bytes: Buffer): { contentType: string; extension: string } | null {
+  if (bytes.length < 12) return null;
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return { contentType: "image/png", extension: "png" };
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return { contentType: "image/jpeg", extension: "jpg" };
+  if (bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP") return { contentType: "image/webp", extension: "webp" };
+  if (bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WAVE") return { contentType: "audio/wav", extension: "wav" };
+  if (bytes.toString("ascii", 0, 4) === "ID3" || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)) return { contentType: "audio/mpeg", extension: "mp3" };
+  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return { contentType: "video/webm", extension: "webm" };
+  if (bytes.toString("ascii", 4, 8) === "ftyp") return { contentType: "video/mp4", extension: "mp4" };
+  const sample = bytes.subarray(0, Math.min(bytes.length, 4096)).toString("utf8");
+  if (sample.includes("\0") || /[<>]/.test(sample)) return null;
+  if (/^[\t\n\r\x20-\x7e\u00a0-\uffff]*$/.test(sample)) return { contentType: "text/plain; charset=utf-8", extension: "txt" };
+  return null;
 }
 
 async function jwtSecret() {

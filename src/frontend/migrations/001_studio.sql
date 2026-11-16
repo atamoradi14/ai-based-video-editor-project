@@ -107,8 +107,11 @@ create table messages (
   created_at timestamptz not null default now()
 );
 
-insert into users (id, email, display_name, password_hash) values
-  ('99999999-9999-4999-8999-999999999999', 'demo@lumen.studio', 'Demo editor', 'scrypt$13d75ad75e37184946b1b7170f0ef98d$d03c014bf41a76a722261727dd821d78f119268993f2e127c4a89b24c0651ca2');
+create table rate_limits (
+  bucket text primary key,
+  hits integer not null,
+  window_start timestamptz not null
+);
 
 insert into brand_kits (id, owner_id, name, theme_key, definition_json, is_system) values
   ('11111111-1111-4111-8111-111111111111', null, 'Minimal', 'minimal', '{"primary":"#1C1917","accent":"#C4552A","text":"#F4EFE6","font":"Noto Naskh Arabic","captionStyle":"bold","look":"cinema"}', true),
